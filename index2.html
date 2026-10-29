@@ -78,6 +78,7 @@
       const form = document.getElementById('attendanceForm');
       const submitBtn = document.getElementById('submitBtn');
       
+      // Your exact Web App URL
       const scriptURL = 'https://script.google.com/macros/s/AKfycbxD4-7K94JqcU6h4rJGL56lBrmfWmFLlxMmWAmV0lQJe4Kzyt9dCoQcd8ngNWoPNsqt/exec';
 
       let localStream;
@@ -95,3 +96,30 @@
 
       form.addEventListener('submit', e => {
         e.preventDefault();
+        
+        video.style.opacity = 0;
+        setTimeout(() => video.style.opacity = 1, 150);
+        
+        submitBtn.innerText = "Submitting securely...";
+        submitBtn.disabled = true;
+
+        fetch(scriptURL, { method: 'POST', body: new FormData(form) })
+          .then(response => {
+            localStorage.setItem('sheet2_Marked', 'true');
+            if (localStream) {
+              localStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('formContainer').style.display = 'none';
+            document.getElementById('lockedScreen').style.display = 'block';
+          })
+          .catch(error => {
+            console.error('Error!', error.message);
+            alert("Submission failed. Please check your internet connection.");
+            submitBtn.innerText = "Take Photo & Submit";
+            submitBtn.disabled = false;
+          });
+      });
+    }
+  </script>
+</body>
+</html>
