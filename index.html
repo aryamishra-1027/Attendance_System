@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Attendance Portal</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; background: #f4f4f9; }
     h2 { text-align: center; color: #333; }
     form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    label { font-weight: bold; margin-top: 10px; display: block; font-size: 14px; }
     input, select { width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
     video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; transition: opacity 0.15s ease-in-out; }
     button { width: 100%; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
@@ -20,11 +21,11 @@
   <h2>Attendance Portal</h2>
   
   <form id="attendanceForm">
+    <label>USN</label>
+    <input type="text" name="usn" required placeholder="e.g. 4NI25EC000">
+
     <label>Name</label>
     <input type="text" name="name" required>
-
-    <label>USN</label>
-    <input type="text" name="usn" required>
 
     <label>Email ID</label>
     <input type="email" name="email" required>
@@ -47,7 +48,8 @@
 
     <div class="camera-container">
       <label>Please ensure your face is visible</label>
-      <video id="camera" autoplay playsinline></video>
+      <!-- Added playsinline and muted to bypass strict mobile browser blocking -->
+      <video id="camera" autoplay playsinline muted></video>
     </div>
 
     <button type="submit" id="submitBtn">Take Photo & Submit</button>
@@ -58,4 +60,45 @@
     const form = document.getElementById('attendanceForm');
     const submitBtn = document.getElementById('submitBtn');
     
-    //
+    // Your exact Google Apps Script URL
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxD4-7K94JqcU6h4rJGL56lBrmfWmFLlxMmWAmV0lQJe4Kzyt9dCoQcd8ngNWoPNsqt/exec';
+
+    // Request camera and force it to play on mobile
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then(stream => { 
+        video.srcObject = stream; 
+        // This line forces Android Chrome to render the video
+        video.play().catch(e => console.error("Camera playback failed:", e));
+      })
+      .catch(err => { 
+        alert("Camera access is required to mark attendance."); 
+        submitBtn.disabled = true;
+      });
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      
+      // Simulate photo flash
+      video.style.opacity = 0;
+      setTimeout(() => video.style.opacity = 1, 150);
+      
+      submitBtn.innerText = "Submitting securely...";
+      submitBtn.disabled = true;
+
+      fetch(scriptURL, { method: 'POST', body: new FormData(form) })
+        .then(response => {
+          alert("Attendance marked successfully in the spreadsheet!");
+          form.reset();
+          submitBtn.innerText = "Take Photo & Submit";
+          submitBtn.disabled = false;
+        })
+        .catch(error => {
+          console.error('Error!', error.message);
+          alert("Submission failed. Please check your internet connection.");
+          submitBtn.innerText = "Take Photo & Submit";
+          submitBtn.disabled = false;
+        });
+    });
+  </script>
+</body>
+</html>
